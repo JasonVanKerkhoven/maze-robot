@@ -4,7 +4,7 @@
 #define RIGHT_PWN 5
 #define RIGHT_DIR 6
 
-#define DUTY_R 120
+#define DUTY_R 140
 #define DUTY_L 85
 
 #define IR_RIGHT 7
@@ -149,16 +149,53 @@ void readIR()
 }
 
 
-//main
+//print IR readings
+void printCurrentIR()
+{
+  Serial.print("\n\nLEFT:   ");
+  Serial.print(irl, DEC);
+  Serial.print("\nCENTER: ");
+  Serial.print(irc, DEC);
+  Serial.print("\nRIGHT:  ");
+  Serial.print(irr, DEC);
+}
+
+
+//main runtime
 void loop()
 {
   //update IR sensor readings
   readIR();
   
   //end block found
-  if (irl && irr)
+  if (mov == 'f' && irl && irc && irr)
   {
-    drive('h');
+    //drive forward for 3 seconds to make sure the end is found
+    unsigned long stamp = millis();
+    drive('f');
+    while (millis() <= stamp+3000)
+    {
+      //update sensor info
+      readIR();
+      
+      //if sensors drop low during 3 seconds crawl break
+      if (!irl || !irc || !irr)
+      {
+        drive('h');
+        return;
+      }
+    }
+
+    //final check at end of crawl if still on all-black
+    if (irl && irc && irr)
+    {
+      while(true) {drive('h');}
+    }
+    else
+    {
+      drive('h');
+      return;
+    }
   }
   //right turn found
   else if (!irl && irr)
@@ -171,8 +208,12 @@ void loop()
     drive('l');
   }
   //otherwise forward
-  else if (!irl && !irr)
+  else if (!irl && irc && !irr)
   {
     drive('f');
+  }
+  else
+  {
+    drive('b');
   }
 }
