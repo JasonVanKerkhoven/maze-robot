@@ -3,7 +3,9 @@
 #define LEFT_DIR 9
 #define RIGHT_PWN 5
 #define RIGHT_DIR 6
-#define DUTY 130
+
+#define DUTY_R 120
+#define DUTY_L 85
 
 #define IR_RIGHT 7
 #define IR_LEFT 8
@@ -41,7 +43,19 @@ void setup()
 }
 
 
-//drive function
+/*
+ * drive function
+ * 
+ * INPUT    MOTOR_R   MOTOR_L   EFFECT
+ * f        fwd       rev       drive forward   
+ * b        rev       rev       drive backwards
+ * r        rev       fwd       rotate right, on-the-spot
+ * l        fwd       rev       rotate left, on-the-spot
+ * h        off       off       full stop
+ * R        off       fwd       hang right while moving forward
+ * L        fwd       off       hang left while moving forward
+ * 
+ */
 void drive(char dir)
 {
   //only change bridge outputs if direction differs from current movement
@@ -51,36 +65,50 @@ void drive(char dir)
     mov = dir;
     switch(dir)
     {
-      //move forward
+      //drive FORWARD
       case('f'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, 255-DUTY);
-        analogWrite(RIGHT_PWN, 255-DUTY);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
         break;
         
-      //move backwards
+      //drive BACKWARDS
       case('b'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, DUTY);
-        analogWrite(RIGHT_PWN, DUTY);
+        analogWrite(LEFT_PWN, DUTY_L);
+        analogWrite(RIGHT_PWN, DUTY_R);
         break;
+
+      //turn RIGHT
+      case('R'):
+        digitalWrite(LEFT_DIR, HIGH);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, 0);
+
+      //turn LEFT
+      case('L'):
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, HIGH);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
         
-      //turn right
+      //rotate on-spot RIGHT
       case('r'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, 255-DUTY);
-        analogWrite(RIGHT_PWN, DUTY);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, DUTY_R);
         break;
         
-      //turn left
+      //rotate on-spot LEFT
       case('l'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, DUTY);
-        analogWrite(RIGHT_PWN, 255-DUTY);
+        analogWrite(LEFT_PWN, DUTY_L);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
         break;
   
       //stop
@@ -120,103 +148,31 @@ void readIR()
   irc = (digitalRead(IR_CENTER) == 0) ? false : true;
 }
 
-/*
-*     LR/C
-*          0   1
-*     00   F   T
-*     01   F   F
-*     11   F   F
-*     10   F   F
-*/
+
 //main
 void loop()
 {
-  testDrive();
   //update IR sensor readings
   readIR();
   
-  //straight path found
-  if (irc && !irl && !irr)
-  {
-    drive('f');
-  }
   //end block found
-  else if (irc && irl && irr)
+  if (irl && irr)
   {
     drive('h');
-  }
-  // right turn found
-  else if (!irl && irr)
-  {
-    drive('r');
-  }
-  else if (irl && !irr)
-  {
-    drive('l');
-  }
-
-  /*
-  //deadend found
-  else if (!irl && !irc && !irr)
-  {
-    //turn until path is found
-    drive('r');
-    while (!(irc && !irl && !irr))
-    {
-      readIR();
-    }
   }
   //right turn found
   else if (!irl && irr)
   {
-    //turn until path is found
-    drive('r');
-    while (!(irc && !irl && !irr))
-    {
-      readIR();
-    }
-  }
-  */
-
-
-
-  /*
-  //end reached
-  if (tapeLeft && tapeCenter && tapeRight)
-  {
-    drive('h');
-  }
-  //turn right
-  else if (!tapeLeft && tapeRight)
-  {
     drive('r');
   }
-  //turn left
-  else if (tapeLeft && !tapeRight)
+  //left turn found
+  else if (irl && !irr)
   {
     drive('l');
   }
-  
-  //straight T
-  else if (tapeLeft && !tapeCenter && tapeRight)
-  {
-    drive('r');
-  }
-  //right T |--
-  else if (!tapeLeft && tapeCenter && tapeRight)
-  {
-    drive('r');
-  }
-  //left T --|
-  else if (tapeLeft && tapeCenter && !tapeRight)
+  //otherwise forward
+  else if (!irl && !irr)
   {
     drive('f');
   }
-  
-  //forward
-  else
-  {
-    drive('f');
-  }
-  */
 }
