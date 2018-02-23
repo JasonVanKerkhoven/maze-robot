@@ -3,11 +3,22 @@
 #define LEFT_DIR 9
 #define RIGHT_PWN 5
 #define RIGHT_DIR 6
-#define DUTY 120
+
+#define DUTY_R 140
+#define DUTY_L 85
 
 #define IR_RIGHT 7
 #define IR_LEFT 8
 #define IR_CENTER 11
+
+//declaring global variables
+char mov = 'h';
+bool irr = false;
+bool irl = false;
+bool irc = false;
+
+
+
 
 //init ports as I/O
 void setup()
@@ -26,100 +37,183 @@ void setup()
   pinMode(IR_RIGHT, INPUT);
   pinMode(IR_LEFT, INPUT);
   pinMode(IR_CENTER, INPUT);
+
+  //set motors to known state
+  drive('h');
 }
 
 
-//drive function
+/*
+ * drive function
+ * 
+ * INPUT    MOTOR_R   MOTOR_L   EFFECT
+ * f        fwd       rev       drive forward   
+ * b        rev       rev       drive backwards
+ * r        rev       fwd       rotate right, on-the-spot
+ * l        fwd       rev       rotate left, on-the-spot
+ * h        off       off       full stop
+ * R        off       fwd       hang right while moving forward
+ * L        fwd       off       hang left while moving forward
+ * 
+ */
 void drive(char dir)
 {
-  switch(dir)
+  //only change bridge outputs if direction differs from current movement
+  if (mov != dir)
   {
-    //move forward
-    case('f'):
-      digitalWrite(LEFT_DIR, HIGH);
-      digitalWrite(RIGHT_DIR, HIGH);
-      analogWrite(LEFT_PWN, 255-DUTY);
-      analogWrite(RIGHT_PWN, 255-DUTY);
-      break;
-      
-    //move backwards
-    case('b'):
-      digitalWrite(LEFT_DIR, LOW);
-      digitalWrite(RIGHT_DIR, LOW);
-      analogWrite(LEFT_PWN, DUTY);
-      analogWrite(LEFT_PWN, DUTY);
-      break;
-      
-    //turn right
-    case('r'):
-      digitalWrite(LEFT_DIR, HIGH);
-      digitalWrite(RIGHT_DIR, LOW);
-      analogWrite(LEFT_PWN, 255-DUTY);
-      analogWrite(LEFT_PWN, DUTY);
-      break;
-      
-    //turn left
-    case('l'):
-      digitalWrite(LEFT_DIR, LOW);
-      digitalWrite(RIGHT_DIR, HIGH);
-      analogWrite(LEFT_PWN, DUTY);
-      analogWrite(LEFT_PWN, 255-DUTY);
-      break;
+    //overwrite current movement and change bridge outputs
+    mov = dir;
+    switch(dir)
+    {
+      //drive FORWARD
+      case('f'):
+        digitalWrite(LEFT_DIR, HIGH);
+        digitalWrite(RIGHT_DIR, HIGH);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
+        break;
+        
+      //drive BACKWARDS
+      case('b'):
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, DUTY_L);
+        analogWrite(RIGHT_PWN, DUTY_R);
+        break;
 
-    //stop
-    default:
-      digitalWrite(LEFT_DIR, LOW);
-      digitalWrite(RIGHT_DIR, LOW);
-      analogWrite(LEFT_PWN, 0);
-      analogWrite(LEFT_PWN, 0);
-      break;
+      //turn RIGHT
+      case('R'):
+        digitalWrite(LEFT_DIR, HIGH);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, 0);
+
+      //turn LEFT
+      case('L'):
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, HIGH);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
+        
+      //rotate on-spot RIGHT
+      case('r'):
+        digitalWrite(LEFT_DIR, HIGH);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, 255-DUTY_L);
+        analogWrite(RIGHT_PWN, DUTY_R);
+        break;
+        
+      //rotate on-spot LEFT
+      case('l'):
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, HIGH);
+        analogWrite(LEFT_PWN, DUTY_L);
+        analogWrite(RIGHT_PWN, 255-DUTY_R);
+        break;
+  
+      //stop
+      default:
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
+        break;
+    }
   }
 }
 
 
-//main
+//test motors
+void testDrive()
+{
+  drive('h');
+  delay(1000);
+  drive('r');
+  delay(1000);
+  drive('l');
+  delay(1000);
+  drive('f');
+  delay(1000);
+  drive('b');
+  delay(1000);
+}
+
+
+//update all IR sensors
+void readIR()
+{
+  //poll sensors (true for tape, false for no tape)
+  irr = (digitalRead(IR_RIGHT) == 0) ? false : true;
+  irl = (digitalRead(IR_LEFT) == 0) ? false : true;
+  irc = (digitalRead(IR_CENTER) == 0) ? false : true;
+}
+
+
+//print IR readings
+void printCurrentIR()
+{
+  Serial.print("\n\nLEFT:   ");
+  Serial.print(irl, DEC);
+  Serial.print("\nCENTER: ");
+  Serial.print(irc, DEC);
+  Serial.print("\nRIGHT:  ");
+  Serial.print(irr, DEC);
+}
+
+
+//main runtime
 void loop()
 {
-    //poll sensors (true for tape, false for no tape)
-  bool tapeRight = (digitalRead(IR_RIGHT) == 0) ? false : true;
-  bool tapeLeft = (digitalRead(IR_LEFT) == 0) ? false : true;
-  bool tapeCenter = (digitalRead(IR_CENTER) == 0) ? false : true;
-
-  //end reached
-  if (tapeLeft && tapeCenter && tapeRight)
+  //update IR sensor readings
+  readIR();
+  
+  //end block found
+  if (mov == 'f' && irl && irc && irr)
   {
-    drive('h');
+    //drive forward for 3 seconds to make sure the end is found
+    unsigned long stamp = millis();
+    drive('f');
+    while (millis() <= stamp+3000)
+    {
+      //update sensor info
+      readIR();
+      
+      //if sensors drop low during 3 seconds crawl break
+      if (!irl || !irc || !irr)
+      {
+        drive('h');
+        return;
+      }
+    }
+
+    //final check at end of crawl if still on all-black
+    if (irl && irc && irr)
+    {
+      while(true) {drive('h');}
+    }
+    else
+    {
+      drive('h');
+      return;
+    }
   }
-  //turn right
-  else if (!tapeLeft && tapeRight)
+  //right turn found
+  else if (!irl && irr)
   {
     drive('r');
   }
-  //turn left
-  else if (tapeLeft && !tapeRight)
+  //left turn found
+  else if (irl && !irr)
   {
     drive('l');
   }
-
-  //straight T
-  else if (tapeLeft && !tapeCenter && tapeRight)
-  {
-    drive('r');
-  }
-  //right T |--
-  else if (!tapeLeft && tapeCenter && tapeRight)
-  {
-    drive('r');
-  }
-  //left T --|
-  else if (tapeLeft && tapeCenter && !tapeRight)
+  //otherwise forward
+  else if (!irl && irc && !irr)
   {
     drive('f');
   }
-
-  //forward
   else
   {
-    drive('f');
+    drive('b');
   }
 }
