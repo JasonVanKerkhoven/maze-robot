@@ -111,6 +111,7 @@ void drive(char dir)
         digitalWrite(RIGHT_DIR, LOW);
         analogWrite(LEFT_PWN, 0);
         analogWrite(RIGHT_PWN, 0);
+        break;
   
       //stop
       default:
