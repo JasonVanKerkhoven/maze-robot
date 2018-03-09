@@ -168,40 +168,47 @@ void loop()
 {
   //update IR sensor readings
   readIR();
+  
+  if (irl)
+  {
+    drive('L');
+    while(irl || !irc)
+    {
+      readIR();
+    }
+  }
+  
+  else if (!irc && irr)
+  {
+    drive('R');
+    while(irr || !irc)
+    {
+      readIR();
+    }
+  }
 
-  //left turn found
-  if (irl && !irr)
+  else if (!irl && !irc && !irr)
   {
     drive('l');
-    while(irc)
-    {
-      readIR();
-    }
-    
-    drive('f');
-    while(!irc)
+    while (!irc)
     {
       readIR();
     }
   }
-  //right turn found
-  else if (!irl && irr)
-  {
-    drive('r');
-    while(irc)
-    {
-      readIR();
-    }
-    
-    drive('f');
-    while(!irc)
-    {
-      readIR();
-    }
-  }
-  //otherwise forward
-  else if (!irl && !irr)
+
+  else
   {
     drive('f');
   }
 }
+
+
+
+
+
+
+
+
+
+
+
