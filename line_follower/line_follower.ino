@@ -160,6 +160,8 @@ void printCurrentIR()
   Serial.print(irc, DEC);
   Serial.print("\nRIGHT:  ");
   Serial.print(irr, DEC);
+  Serial.print("\nLast direction: ");
+  Serial.print(mov, DEC);
 }
 
 
@@ -171,7 +173,16 @@ void loop()
   
   if (irl)
   {
-    drive('L');
+    if(!irc)
+    {
+      drive('f');
+      delay(750);
+      drive('l');
+    }
+    else {
+      drive('L');
+    }
+    
     while(irl || !irc)
     {
       readIR();
@@ -180,7 +191,9 @@ void loop()
   
   else if (!irc && irr)
   {
-    drive('R');
+    drive('f');
+    delay(750);
+    drive('r');
     while(irr || !irc)
     {
       readIR();
@@ -189,22 +202,31 @@ void loop()
 
   else if (!irl && !irc && !irr)
   {
-    drive('l');
-    while (!irc)
+
+    drive('f');
+    //ugly, go forward to see if we are at a T but missed
+    int count = 0;
+    while(!irl && !irc && !irr && count <=500)
     {
+      count++;
+      delay(1);
       readIR();
     }
+    //If any sensor has gone high, deal with it at the start of the loop, else do the full turn
+    if(!irl && !irc && !irr)
+    {
+      drive('l');
+      while (!irc)
+      {
+        readIR();
+      }
+    }
   }
-
   else
   {
     drive('f');
   }
 }
-
-
-
-
 
 
 
