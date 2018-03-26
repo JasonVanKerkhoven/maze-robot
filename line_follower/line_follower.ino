@@ -38,8 +38,10 @@ void setup()
   pinMode(IR_LEFT, INPUT);
   pinMode(IR_CENTER, INPUT);
 
+  
   //set motors to known state
   drive('h');
+  
 }
 
 
@@ -69,46 +71,48 @@ void drive(char dir)
       case('f'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, 255-DUTY_L);
-        analogWrite(RIGHT_PWN, 255-DUTY_R);
+        analogWrite(LEFT_PWN, 40);
+        analogWrite(RIGHT_PWN, 0);
         break;
         
       //drive BACKWARDS
       case('b'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 255);
+        analogWrite(RIGHT_PWN, 255);
         break;
-
-      //turn RIGHT
-      case('R'):
-        digitalWrite(LEFT_DIR, HIGH);
-        digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, 255-DUTY_L);
-        analogWrite(RIGHT_PWN, 0);
-
-      //turn LEFT
-      case('L'):
-        digitalWrite(LEFT_DIR, LOW);
-        digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, 0);
-        analogWrite(RIGHT_PWN, 255-DUTY_R);
         
       //rotate on-spot RIGHT
       case('r'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, 255-DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 255);
         break;
         
       //rotate on-spot LEFT
       case('l'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, 255-DUTY_R);
+        analogWrite(LEFT_PWN, 255);
+        analogWrite(RIGHT_PWN, 0);
+        break;
+
+      //gradual turn LEFT
+      case('L'):
+        digitalWrite(LEFT_DIR, LOW);
+        digitalWrite(RIGHT_DIR, HIGH);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
+        break;
+
+      //gradual turn RIGHT
+      case('R'):
+        digitalWrite(LEFT_DIR, HIGH);
+        digitalWrite(RIGHT_DIR, LOW);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
         break;
   
       //stop
@@ -134,6 +138,10 @@ void testDrive()
   delay(1000);
   drive('f');
   delay(1000);
+  drive('L');
+  delay(1000);
+  drive('R');
+  delay(1000);
   drive('b');
   delay(1000);
 }
@@ -158,6 +166,8 @@ void printCurrentIR()
   Serial.print(irc, DEC);
   Serial.print("\nRIGHT:  ");
   Serial.print(irr, DEC);
+  Serial.print("\nLast direction: ");
+  Serial.print(mov, DEC);
 }
 
 
@@ -167,53 +177,68 @@ void loop()
   //update IR sensor readings
   readIR();
   
-  //end block found
-  if (mov == 'f' && irl && irc && irr)
-  {
-    //drive forward for 3 seconds to make sure the end is found
-    unsigned long stamp = millis();
-    drive('f');
-    while (millis() <= stamp+3000)
+  if(irl)
+  {  
+    drive('L');
+    while(irl || !irc)
     {
-      //update sensor info
       readIR();
-      
-      //if sensors drop low during 3 seconds crawl break
-      if (!irl || !irc || !irr)
+    }
+  }
+  
+  else if (irr)
+  {
+    drive('f');
+    //Delay 200ms to see if this is a corner or a T.
+    unsigned long time= millis();
+    while(irc || millis()<time+250)
+    {
+      readIR();
+    }
+    //A right hand corner was detected. 
+    if(!irc)
+    {   
+      drive('r');
+      while(irr || !irc)
       {
-        drive('h');
-        return;
+        readIR();
       }
     }
+  }
 
-    //final check at end of crawl if still on all-black
-    if (irl && irc && irr)
-    {
-      while(true) {drive('h');}
-    }
-    else
-    {
-      drive('h');
-      return;
-    }
-  }
-  //right turn found
-  else if (!irl && irr)
+  else if (!irl && !irc && !irr)
   {
-    drive('r');
-  }
-  //left turn found
-  else if (irl && !irr)
-  {
-    drive('l');
-  }
-  //otherwise forward
-  else if (!irl && irc && !irr)
-  {
+
     drive('f');
+    //ugly, go forward to see if we are at a T but missed
+     unsigned long time= millis(); 
+    while(!irl && !irc && !irr && millis() <= time + 250)
+    {
+      readIR();
+    }
+    //If any sensor has gone high, deal with it at the start of the loop, else do the full turn
+    if(!irl && !irc && !irr)
+    {
+      drive('r');
+      while (!irc)
+      {
+        readIR();
+      }
+    }
   }
   else
   {
-    drive('b');
+    drive('f');
   }
 }
+
+
+
+
+
+
+
+
+
+
+
