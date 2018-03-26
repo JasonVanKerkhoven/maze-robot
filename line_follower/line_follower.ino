@@ -38,8 +38,10 @@ void setup()
   pinMode(IR_LEFT, INPUT);
   pinMode(IR_CENTER, INPUT);
 
+  
   //set motors to known state
   drive('h');
+  
 }
 
 
@@ -69,56 +71,56 @@ void drive(char dir)
       case('f'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 40);
+        analogWrite(RIGHT_PWN, 0);
         break;
         
       //drive BACKWARDS
       case('b'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, 255- DUTY_L);
-        analogWrite(RIGHT_PWN, 255 - DUTY_R);
+        analogWrite(LEFT_PWN, 255);
+        analogWrite(RIGHT_PWN, 255);
         break;
         
       //rotate on-spot RIGHT
       case('r'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, 255 -DUTY_R);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 255);
         break;
         
       //rotate on-spot LEFT
       case('l'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, 255- DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 255);
+        analogWrite(RIGHT_PWN, 0);
         break;
 
       //gradual turn LEFT
       case('L'):
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, HIGH);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
         break;
 
       //gradual turn RIGHT
       case('R'):
         digitalWrite(LEFT_DIR, HIGH);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
         break;
   
       //stop
       default:
         digitalWrite(LEFT_DIR, LOW);
         digitalWrite(RIGHT_DIR, LOW);
-        analogWrite(LEFT_PWN, DUTY_L);
-        analogWrite(RIGHT_PWN, DUTY_R);
+        analogWrite(LEFT_PWN, 0);
+        analogWrite(RIGHT_PWN, 0);
         break;
     }
   }
@@ -135,6 +137,10 @@ void testDrive()
   drive('l');
   delay(1000);
   drive('f');
+  delay(1000);
+  drive('L');
+  delay(1000);
+  drive('R');
   delay(1000);
   drive('b');
   delay(1000);
@@ -172,7 +178,7 @@ void loop()
   readIR();
   
   if(irl)
-  {
+  {  
     drive('L');
     while(irl || !irc)
     {
@@ -185,13 +191,13 @@ void loop()
     drive('f');
     //Delay 200ms to see if this is a corner or a T.
     unsigned long time= millis();
-    while(irc || millis()<time+200)
+    while(irc || millis()<time+250)
     {
       readIR();
     }
     //A right hand corner was detected. 
     if(!irc)
-    {
+    {   
       drive('r');
       while(irr || !irc)
       {
@@ -205,7 +211,7 @@ void loop()
 
     drive('f');
     //ugly, go forward to see if we are at a T but missed
-     unsigned long time= millis();
+     unsigned long time= millis(); 
     while(!irl && !irc && !irr && millis() <= time + 250)
     {
       readIR();
