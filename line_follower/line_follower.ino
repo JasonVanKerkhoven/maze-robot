@@ -10,12 +10,14 @@
 #define IR_RIGHT 7
 #define IR_LEFT 8
 #define IR_CENTER 11
+#define IR_OUTTER_LEFT 4
 
 //declaring global variables
 char mov = 'h';
 bool irr = false;
 bool irl = false;
 bool irc = false;
+bool irol = false;
 
 
 
@@ -37,11 +39,11 @@ void setup()
   pinMode(IR_RIGHT, INPUT);
   pinMode(IR_LEFT, INPUT);
   pinMode(IR_CENTER, INPUT);
+  pinMode(IR_OUTTER_LEFT, INPUT);
 
   
   //set motors to known state
   drive('h');
-  
 }
 
 
@@ -62,7 +64,7 @@ void drive(char dir)
 {
   //only change bridge outputs if direction differs from current movement
   if (mov != dir)
-  {
+  { 
     //overwrite current movement and change bridge outputs
     mov = dir;
     switch(dir)
@@ -130,20 +132,21 @@ void drive(char dir)
 //test motors
 void testDrive()
 {
+  unsigned int t = 5000;
   drive('h');
-  delay(1000);
+  delay(t);
   drive('r');
-  delay(1000);
+  delay(t);
   drive('l');
-  delay(1000);
+  delay(t);
   drive('f');
-  delay(1000);
+  delay(t);
   drive('L');
-  delay(1000);
+  delay(t);
   drive('R');
-  delay(1000);
+  delay(t);
   drive('b');
-  delay(1000);
+  delay(t);
 }
 
 
@@ -154,20 +157,23 @@ void readIR()
   irr = (digitalRead(IR_RIGHT) == 0) ? false : true;
   irl = (digitalRead(IR_LEFT) == 0) ? false : true;
   irc = (digitalRead(IR_CENTER) == 0) ? false : true;
+  irol = (digitalRead(IR_OUTTER_LEFT) == 0) ? false : true;
 }
 
 
 //print IR readings
 void printCurrentIR()
 {
-  Serial.print("\n\nLEFT:   ");
+  Serial.print("\n\nOUTER LEFT:      " );
+  Serial.print(irol, DEC);
+  Serial.print("\nLEFT:            ");
   Serial.print(irl, DEC);
-  Serial.print("\nCENTER: ");
+  Serial.print("\nCENTER:          ");
   Serial.print(irc, DEC);
-  Serial.print("\nRIGHT:  ");
+  Serial.print("\nRIGHT:           ");
   Serial.print(irr, DEC);
-  Serial.print("\nLast direction: ");
-  Serial.print(mov, DEC);
+  Serial.print("\nLast direction:  ");
+  Serial.print(mov);
 }
 
 
@@ -176,11 +182,30 @@ void loop()
 {
   //update IR sensor readings
   readIR();
-  
-  if(irl)
+
+  if(irol)
+  {
+    drive('f');
+    //Delay 200ms to see if this is a corner or a T.
+    unsigned long time= millis();
+    while(millis()<time+250)
+    {
+      readIR();
+    }
+    drive('l');
+    while(!irol)
+    {
+      readIR();
+    }
+    while(!irc)
+    {
+      readIR();
+    }
+  }
+  else if(irl)
   {  
-    drive('L');
-    while(irl || !irc)
+    drive('l');
+    while((irl || !irc) && !irr)
     {
       readIR();
     }
@@ -188,18 +213,20 @@ void loop()
   
   else if (irr)
   {
+    /*
     drive('f');
     //Delay 200ms to see if this is a corner or a T.
     unsigned long time= millis();
-    while(irc || millis()<time+250)
+    while(irc || millis()<time+350)
     {
       readIR();
     }
-    //A right hand corner was detected. 
+    //A right hand corner was detected.
+    */ 
     if(!irc)
     {   
       drive('r');
-      while(irr || !irc)
+      while((irr || !irc) && irl)
       {
         readIR();
       }
@@ -212,12 +239,12 @@ void loop()
     drive('f');
     //ugly, go forward to see if we are at a T but missed
      unsigned long time= millis(); 
-    while(!irl && !irc && !irr && millis() <= time + 250)
+    while(!irl && !irc && !irr && millis() <= time + 500)
     {
       readIR();
     }
     //If any sensor has gone high, deal with it at the start of the loop, else do the full turn
-    if(!irl && !irc && !irr)
+    if(!irl && !irc && !irr && !irol)
     {
       drive('r');
       while (!irc)
@@ -231,14 +258,4 @@ void loop()
     drive('f');
   }
 }
-
-
-
-
-
-
-
-
-
-
 
