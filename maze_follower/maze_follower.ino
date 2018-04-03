@@ -4,8 +4,14 @@
 #define RIGHT_PWN 5
 #define RIGHT_DIR 6
 
-#define USS_CENTER_TRIG 7
-#define USS_CENTER_ECHO 8
+#define USS_FRONT_ECHO 3
+#define USS_FRONT_TRIG 2
+
+#define USS_LEFT_TRIG 7
+#define USS_LEFT_ECHO 8
+
+#define USS_RIGHT_TRIG 11
+#define USS_RIGHT_ECHO 12
 
 #define DUTY_R 140
 #define DUTY_L 85
@@ -29,8 +35,12 @@ void setup()
   pinMode(RIGHT_DIR , OUTPUT);
 
   //set ultrasonic GPIO
-  pinMode(USS_CENTER_TRIG, OUTPUT);
-  pinMode(USS_CENTER_ECHO, INPUT);
+  pinMode(USS_FRONT_TRIG, OUTPUT);
+  pinMode(USS_FRONT_ECHO, INPUT);
+  pinMode(USS_LEFT_TRIG, OUTPUT);
+  pinMode(USS_LEFT_ECHO, INPUT);
+  pinMode(USS_RIGHT_TRIG, OUTPUT);
+  pinMode(USS_RIGHT_ECHO, INPUT);
   
   //set motors to known state
   drive('h');
@@ -139,28 +149,58 @@ void testDrive()
 }
 
 
-//poll center sensor
-unsigned long trigCenter()
+/*
+ * poll a ultrasonic sensor
+ * DO NOT CALL
+ */
+unsigned long trigUltrasonic(char trigPin, char echoPin)
 {
   unsigned long long deltaSum = 0;
   for (int i=0; i<30; i++)
   {
     //trigger pulse
-    digitalWrite(USS_CENTER_TRIG,LOW);
+    digitalWrite(trigPin,LOW);
     delayMicroseconds(2);
-    digitalWrite(USS_CENTER_TRIG,HIGH);
+    digitalWrite(trigPin,HIGH);
     delayMicroseconds(10);
-    digitalWrite(USS_CENTER_TRIG,LOW);
+    digitalWrite(trigPin,LOW);
 
-    deltaSum += pulseIn(USS_CENTER_ECHO, HIGH);
+    deltaSum += pulseIn(echoPin, HIGH);
   }
   return (deltaSum/30);
+}
+
+
+//poll FRONT sensor
+unsigned long trigFront()
+{
+	return trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
+}
+
+
+//poll LEFT sensor
+unsigned long trigLeft()
+{
+	return trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
+}
+
+
+//poll RIGHT sensor
+unsigned long trigRight()
+{
+	return trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
 }
 
 
 //main runtime
 void loop()
 {
-  Serial.println(trigCenter(), DEC);
+  Serial.print("FRONT:  ");
+  Serial.println(trigFront(), DEC);
+  Serial.print("RIGHT:  ");
+  Serial.println(trigRight(), DEC);
+  Serial.print("LEFT:   ");
+  Serial.println(trigLeft(), DEC);
+  Serial.println();
 }
 
