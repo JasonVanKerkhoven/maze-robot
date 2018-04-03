@@ -195,6 +195,38 @@ unsigned long trigRight()
 //main runtime
 void loop()
 {
+  // Drive forward
+  drive('f');
+  
+  // Until hit a wall
+  while(trigFront() > 200)
+  {
+    Serial.println(trigFront(), DEC);
+  }
+  
+  // If left open
+  if (trigLeft() > 1000)
+  {
+    // Turn 90 degrees left
+    drive('l');
+    delay(2000);
+  }
+  // If right open
+  else if (trigRight() > 1000)
+  {
+    // Turn 90 degrees right
+    drive('r');
+    delay(2000);
+  }
+  // Dead-end
+  else
+  {
+    // Turn around
+    drive('l');
+    delay(8000);
+  }
+
+  /*
   Serial.print("FRONT:  ");
   Serial.println(trigFront(), DEC);
   Serial.print("RIGHT:  ");
@@ -202,5 +234,14 @@ void loop()
   Serial.print("LEFT:   ");
   Serial.println(trigLeft(), DEC);
   Serial.println();
+  drive('f');
+  while(trigFront() > 200)
+  {
+     Serial.print("FRONT:  ");
+     Serial.println(trigFront(), DEC);
+  }
+   drive('h');
+   delay(500);
+   */
 }
 
