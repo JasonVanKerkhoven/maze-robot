@@ -19,6 +19,9 @@
 
 //declaring global variables
 char mov = 'h';
+bool front = true;
+bool left = false;
+bool right = false;
 
 
 //init ports as I/O
@@ -166,6 +169,7 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
     digitalWrite(trigPin,LOW);
 
     deltaSum += pulseIn(echoPin, HIGH);
+    delay(1);
   }
   return (deltaSum/30);
 }
@@ -174,74 +178,53 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
 //poll FRONT sensor
 unsigned long trigFront()
 {
-	return trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
+	unsigned long d = trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
+  //Serial.print("FRONT:  ");
+  //Serial.println(d, DEC);
+  return d;
 }
 
 
 //poll LEFT sensor
 unsigned long trigLeft()
 {
-	return trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
+	unsigned long d = trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
+  //Serial.print("LEFT:   ");
+  //Serial.println(d, DEC);
+  return d;
 }
 
 
 //poll RIGHT sensor
 unsigned long trigRight()
 {
-	return trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
+	unsigned long d = trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
+  //Serial.print("RIGHT:  ");
+  //Serial.println(d, DEC);
+  return d;
 }
 
 
 //main runtime
 void loop()
 {
-  // Drive forward
-  drive('f');
-  
-  // Until hit a wall
-  while(trigFront() > 200)
+  if (trigFront() > 450)
   {
-    Serial.println(trigFront(), DEC);
+    drive('f');
   }
-  
-  // If left open
-  if (trigLeft() > 1000)
+  else if (trigRight() > 450)
   {
-    // Turn 90 degrees left
-    drive('l');
-    delay(2000);
-  }
-  // If right open
-  else if (trigRight() > 1000)
-  {
-    // Turn 90 degrees right
     drive('r');
-    delay(2000);
+    while (trigFront() < 450) {}
   }
-  // Dead-end
-  else
+  else if (trigLeft() > 450)
   {
-    // Turn around
-    drive('l');
-    delay(8000);
+    drive('r');
+    while (trigFront() < 450) {}
   }
 
-  /*
-  Serial.print("FRONT:  ");
-  Serial.println(trigFront(), DEC);
-  Serial.print("RIGHT:  ");
-  Serial.println(trigRight(), DEC);
-  Serial.print("LEFT:   ");
-  Serial.println(trigLeft(), DEC);
-  Serial.println();
-  drive('f');
-  while(trigFront() > 200)
-  {
-     Serial.print("FRONT:  ");
-     Serial.println(trigFront(), DEC);
-  }
-   drive('h');
-   delay(500);
-   */
+  //trigFront();
+  //trigRight();
+  //trigLeft();
 }
 
