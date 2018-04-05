@@ -180,7 +180,7 @@ unsigned long trigFront()
 {
 	unsigned long d = trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
   //Serial.print("FRONT:  ");
-  Serial.println(d, DEC);
+  //Serial.println(d, DEC);
   return d;
 }
 
@@ -208,7 +208,6 @@ unsigned long trigRight()
 //main runtime
 void loop()
 {
-  /*
   if (trigFront() > 450)
   {
     drive('f');
@@ -223,10 +222,8 @@ void loop()
     drive('r');
     while (trigFront() < 450) {}
   }
-  */
 
-  drive('f');
-  trigFront();
+  //trigFront();
   //trigRight();
   //trigLeft();
 }
