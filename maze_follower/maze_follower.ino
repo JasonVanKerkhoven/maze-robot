@@ -132,6 +132,22 @@ void drive(char dir)
 }
 
 
+void turnRight()
+{
+  char pre = mov;
+  drive('r');
+  delay(1750);
+  drive(pre);
+}
+void turnLeft()
+{
+  char pre = mov;
+  drive('l');
+  delay(1650);
+  drive(pre);
+}
+
+
 //test motors
 void testDrive()
 {
@@ -169,7 +185,7 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
     digitalWrite(trigPin,LOW);
 
     deltaSum += pulseIn(echoPin, HIGH);
-    delay(1);
+    delay(5);
   }
   return (deltaSum/30);
 }
@@ -179,8 +195,8 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
 unsigned long trigFront()
 {
 	unsigned long d = trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
-  //Serial.print("FRONT:  ");
-  //Serial.println(d, DEC);
+  Serial.print("FRONT:  ");
+  Serial.println(d, DEC);
   return d;
 }
 
@@ -189,8 +205,8 @@ unsigned long trigFront()
 unsigned long trigLeft()
 {
 	unsigned long d = trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
-  //Serial.print("LEFT:   ");
-  //Serial.println(d, DEC);
+  Serial.print("LEFT:   ");
+  Serial.println(d, DEC);
   return d;
 }
 
@@ -199,8 +215,8 @@ unsigned long trigLeft()
 unsigned long trigRight()
 {
 	unsigned long d = trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
-  //Serial.print("RIGHT:  ");
-  //Serial.println(d, DEC);
+  Serial.print("RIGHT:  ");
+  Serial.println(d, DEC);
   return d;
 }
 
@@ -208,21 +224,83 @@ unsigned long trigRight()
 //main runtime
 void loop()
 {
-  if (trigFront() > 450)
+  drive('f');
+  if (trigRight() < 250)
+  {
+    drive('l');
+    while (trigRight() < 250) {}
+    drive('f');
+  }
+  if (trigLeft() < 250)
+  {
+    drive('r');
+    while (trigLeft() < 250) {}
+    drive('f');
+  }
+
+
+  /*
+  //stage 1
+  drive('f');
+  while (trigFront() > 440)
+  {
+    if (trigRight() < 250)
+    {
+      drive('l');
+      while (trigRight() < 250) {}
+      drive('f');
+    }
+    if (trigLeft() < 250)
+    {
+      drive('r');
+      while (trigLeft() < 250) {}
+      drive('f');
+    }
+  }
+
+  //stage 2
+  turnLeft();
+  while (trigFront() > 440)
+  {
+    
+  }
+
+  //stage 3
+  turnRight();
+  while (trigFront() > 440)
+  {
+    
+  }
+
+  //final halt
+  while (true)
+  {
+    drive('h');
+  }
+  */
+
+  
+  /*
+  if (trigFront() > 440)
   {
     drive('f');
   }
-  else if (trigRight() > 450)
+  else if (trigLeft() > 440)
+  {
+    drive('l');
+    while (trigFront() < 440) {}
+  }
+  else if (trigRight() > 440)
   {
     drive('r');
-    while (trigFront() < 450) {}
+    while (trigFront() < 440) {}
   }
-  else if (trigLeft() > 450)
+  else
   {
-    drive('r');
-    while (trigFront() < 450) {}
+    drive('h');
   }
-
+  */
+  
   //trigFront();
   //trigRight();
   //trigLeft();
