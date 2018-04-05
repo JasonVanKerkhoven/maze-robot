@@ -19,6 +19,9 @@
 
 //declaring global variables
 char mov = 'h';
+bool front = true;
+bool left = false;
+bool right = false;
 
 
 //init ports as I/O
@@ -166,6 +169,7 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
     digitalWrite(trigPin,LOW);
 
     deltaSum += pulseIn(echoPin, HIGH);
+    delay(1);
   }
   return (deltaSum/30);
 }
@@ -174,33 +178,56 @@ unsigned long trigUltrasonic(char trigPin, char echoPin)
 //poll FRONT sensor
 unsigned long trigFront()
 {
-	return trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
+	unsigned long d = trigUltrasonic(USS_FRONT_TRIG, USS_FRONT_ECHO);
+  //Serial.print("FRONT:  ");
+  Serial.println(d, DEC);
+  return d;
 }
 
 
 //poll LEFT sensor
 unsigned long trigLeft()
 {
-	return trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
+	unsigned long d = trigUltrasonic(USS_LEFT_TRIG, USS_LEFT_ECHO);
+  //Serial.print("LEFT:   ");
+  //Serial.println(d, DEC);
+  return d;
 }
 
 
 //poll RIGHT sensor
 unsigned long trigRight()
 {
-	return trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
+	unsigned long d = trigUltrasonic(USS_RIGHT_TRIG, USS_RIGHT_ECHO);
+  //Serial.print("RIGHT:  ");
+  //Serial.println(d, DEC);
+  return d;
 }
 
 
 //main runtime
 void loop()
 {
-  Serial.print("FRONT:  ");
-  Serial.println(trigFront(), DEC);
-  Serial.print("RIGHT:  ");
-  Serial.println(trigRight(), DEC);
-  Serial.print("LEFT:   ");
-  Serial.println(trigLeft(), DEC);
-  Serial.println();
+  /*
+  if (trigFront() > 450)
+  {
+    drive('f');
+  }
+  else if (trigRight() > 450)
+  {
+    drive('r');
+    while (trigFront() < 450) {}
+  }
+  else if (trigLeft() > 450)
+  {
+    drive('r');
+    while (trigFront() < 450) {}
+  }
+  */
+
+  drive('f');
+  trigFront();
+  //trigRight();
+  //trigLeft();
 }
 
