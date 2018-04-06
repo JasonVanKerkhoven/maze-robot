@@ -238,7 +238,8 @@ void forwardUntilWall()
   int currentRight = trigRight();
   int nextLeft;
   int nextRight;
-
+  int lastLeft = currentLeft;
+  int lastRight = currentRight;
   //drive while no wall present
   drive('f');
   while (trigFront() > 440)
@@ -253,10 +254,14 @@ void forwardUntilWall()
       if((nextRight < currentRight) && currentRight < 600) //
       {
         drive('l');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
       }
       else if (currentLeft < 600)
       {
         drive('r');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
       }
       //look for changes on left wall, still horrifying. 
     }
@@ -265,10 +270,45 @@ void forwardUntilWall()
       if((nextLeft < currentLeft) && currentLeft < 600) //if you're getting closer to the wall, turn right
       {
         drive('r');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
       }
       else if (currentRight < 600)
       {
         drive('l');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
+      }
+      
+    }
+    else if(50<= abs(lastRight-nextRight) && 100>= abs(lastRight-nextRight))
+    {
+      if((nextRight < currentRight) && currentRight < 600) //
+      {
+        drive('l');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
+      }
+      else if (currentLeft < 600)
+      {
+        drive('r');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
+      }
+    }
+    else if(50 <= abs(lastLeft - nextLeft) && 100 >= abs(lastLeft-nextLeft))
+    {
+      if((nextLeft < currentLeft) && currentLeft < 600) //if you're getting closer to the wall, turn right
+      {
+        drive('r');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
+      }
+      else if (currentRight < 600)
+      {
+        drive('l');
+        lastRight = nextRight;
+        lastLeft = nextLeft;
       }
     }
     currentLeft = nextLeft;
@@ -280,10 +320,7 @@ void forwardUntilWall()
 
 //main runtime
 void loop()
-{
-  int currentLeft = trigLeft();
-  int currentRight = trigRight();
-  
+{ 
   //stage 1
   forwardUntilWall();
 
