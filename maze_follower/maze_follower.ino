@@ -136,7 +136,7 @@ void turnRight()
 {
   char pre = mov;
   drive('r');
-  delay(2000);
+  delay(3000);
   //delay(1750); // laptop
   drive(pre);
 }
@@ -152,7 +152,7 @@ void turnLeft()
     current = trigRight();
   }
   */
-  delay(1950);
+  delay(3000);
   //delay(1650); //laptop
   drive(pre);
 }
