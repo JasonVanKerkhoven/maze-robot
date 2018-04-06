@@ -136,14 +136,24 @@ void turnRight()
 {
   char pre = mov;
   drive('r');
-  delay(1750);
+  delay(2000);
+  //delay(1750); // laptop
   drive(pre);
 }
 void turnLeft()
 {
   char pre = mov;
   drive('l');
-  delay(1650);
+  /*int currentMin = trigRight();
+  int current = trigRight();
+  while(currentMin>current)
+  {
+    currentMin = current;
+    current = trigRight();
+  }
+  */
+  delay(1950);
+  //delay(1650); //laptop
   drive(pre);
 }
 
@@ -221,88 +231,76 @@ unsigned long trigRight()
 }
 
 
+void forwardUntilWall()
+{
+  //declaring method variables
+  int currentLeft = trigLeft();
+  int currentRight = trigRight();
+  int nextLeft;
+  int nextRight;
+
+  //drive while no wall present
+  drive('f');
+  while (trigFront() > 440)
+  {
+    drive('f');
+    delay(300); //take a third a second
+    nextRight = trigRight();
+    nextLeft = trigLeft();
+    //This is horrifying. Look for changes on the right wall, ignore walls appearing or disappearing. 
+    if( 45 <= abs(nextRight - currentRight) && 200>= abs(nextRight - currentRight))
+    {
+      if((nextRight < currentRight) && currentRight < 600) //
+      {
+        drive('l');
+      }
+      else if (currentLeft < 600)
+      {
+        drive('r');
+      }
+      //look for changes on left wall, still horrifying. 
+    }
+    else if(45 <= abs(nextLeft - currentLeft) && 200>= abs(nextLeft - currentLeft))
+    {
+      if((nextLeft < currentLeft) && currentLeft < 600) //if you're getting closer to the wall, turn right
+      {
+        drive('r');
+      }
+      else if (currentRight < 600)
+      {
+        drive('l');
+      }
+    }
+    currentLeft = nextLeft;
+    currentRight = nextRight;
+    delay(100);
+  }
+}
+
+
 //main runtime
 void loop()
 {
-  drive('f');
-  if (trigRight() < 250)
-  {
-    drive('l');
-    while (trigRight() < 250) {}
-    drive('f');
-  }
-  if (trigLeft() < 250)
-  {
-    drive('r');
-    while (trigLeft() < 250) {}
-    drive('f');
-  }
-
-
-  /*
+  int currentLeft = trigLeft();
+  int currentRight = trigRight();
+  
   //stage 1
-  drive('f');
-  while (trigFront() > 440)
-  {
-    if (trigRight() < 250)
-    {
-      drive('l');
-      while (trigRight() < 250) {}
-      drive('f');
-    }
-    if (trigLeft() < 250)
-    {
-      drive('r');
-      while (trigLeft() < 250) {}
-      drive('f');
-    }
-  }
+  forwardUntilWall();
 
   //stage 2
   turnLeft();
-  while (trigFront() > 440)
-  {
-    
-  }
+  forwardUntilWall();
 
   //stage 3
   turnRight();
-  while (trigFront() > 440)
-  {
-    
-  }
+  forwardUntilWall();
 
-  //final halt
-  while (true)
-  {
-    drive('h');
-  }
-  */
-
+  //Stage 4
+  turnRight();
+  forwardUntilWall();
   
-  /*
-  if (trigFront() > 440)
-  {
-    drive('f');
-  }
-  else if (trigLeft() > 440)
-  {
-    drive('l');
-    while (trigFront() < 440) {}
-  }
-  else if (trigRight() > 440)
-  {
-    drive('r');
-    while (trigFront() < 440) {}
-  }
-  else
-  {
-    drive('h');
-  }
-  */
-  
-  //trigFront();
-  //trigRight();
-  //trigLeft();
+  //Stage 5
+  turnLeft();
+  forwardUntilWall();
 }
 
